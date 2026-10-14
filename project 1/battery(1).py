@@ -18,7 +18,7 @@ def initialize():
     overcharge_events = [] 
 
     # Constants 
-    global BAD_BATTERY_LIMIT,GOOD_BATTERY_LIMIT, SLOW_CHARGE, FAST_CHARGE, CAPPED_CHARGE
+    global BAD_BATTERY_LIMIT, GOOD_BATTERY_LIMIT, SLOW_CHARGE, FAST_CHARGE, CAPPED_CHARGE
     BAD_BATTERY_LIMIT = 80 # maximum charge for battery in bad battery state
     GOOD_BATTERY_LIMIT = 100 # maximum charge for battery in general 
     SLOW_CHARGE = "slow" # identifier for a slow charge regimen
@@ -31,7 +31,7 @@ def initialize():
     MINIMUM_TEMPERATURE = 0
 
     # Charging Constants
-    global SLOW_CHARGE_RECHARGE_RATE, SLOW_CHARGE_TEMPERATURE_RATE,FAST_CHARGE_RECHARGE_RATE, FAST_CHARGE_TEMPERATURE_RATE
+    global SLOW_CHARGE_RECHARGE_RATE, SLOW_CHARGE_TEMPERATURE_RATE, FAST_CHARGE_RECHARGE_RATE, FAST_CHARGE_TEMPERATURE_RATE
     global FAST_CHARGE_RECHARGE_LIMIT, FAST_CHARGE_TEMPERATURE_LIMIT
     FAST_CHARGE_RECHARGE_LIMIT = 80 # maximum fast charge value for battery 
     FAST_CHARGE_TEMPERATURE_LIMIT = 40 # maximum temperature value for fast charge
@@ -55,31 +55,32 @@ def initialize():
     ## Overcharge related constants 
     global OVERCHARGE_CHARGE_THRESHOLD, OVERCHARGE_TIME_THRESHOLD, OVERCHARGE_EVENT_COUNT_THRESHOLD
     OVERCHARGE_CHARGE_THRESHOLD = 90 # value until overcharge events occur. 
-    OVERCHARGE_TIME_THRESHOLD = 300 #in minutes
+    OVERCHARGE_TIME_THRESHOLD = 360 #in minutes
     OVERCHARGE_EVENT_COUNT_THRESHOLD = 3 # How many events are allowed until our battery enters a bad health state? 
 
-# Return current battery temperature. 
 def get_cur_temp():
+    '''Returns the current temperature of the battery.'''
     global cur_temp
     return cur_temp 
 
-# Return current battery charge value. 
 def get_cur_charge():
+    '''Returns the current charge value of the battery. '''
     global cur_charge 
     return cur_charge
 
-# Return current time. 
 def get_cur_time(): 
+    '''Returns the current time elapsed of the simulation.'''
     global cur_time
     return cur_time
 
-# Return current battery health status. 
 def get_cur_battery_health():
+    '''Returns the current battery health of the battery.'''
     global good_battery_health
     return good_battery_health
 
 # Return max possible charge
 def get_max_possible_charge(): 
+    '''Returns the max possible charge of the battery when called.'''
     global good_battery_health
     if good_battery_health:
         return GOOD_BATTERY_LIMIT
@@ -88,85 +89,93 @@ def get_max_possible_charge():
 
 # Setter helper functions 
 def set_cur_temp(newTemp): 
+    '''Sets the current simulated temperature of the battery to newTemp.'''
     global cur_temp
     # Caps temperature to be at minimum, MINIMUM_TEMPERATURE
-    if newTemp < MINIMUM_TEMPERATURE: 
-        cur_temp= MINIMUM_TEMPERATURE
+    if newTemp <= MINIMUM_TEMPERATURE: 
+        cur_temp = MINIMUM_TEMPERATURE
     else:
         cur_temp = newTemp 
 
 def set_cur_charge(newCharge): 
+    '''Sets the current charge of the battery to newCharge.'''
     global cur_charge
 
     # Caps temperature to be at minimum, MINIMUM_CHARGE
-    if newCharge < MINIMUM_CHARGE: 
+    if newCharge <= MINIMUM_CHARGE: 
         cur_charge = MINIMUM_CHARGE
     else: 
         cur_charge = newCharge 
 
 def set_cur_battery_health(newState): 
+    '''Sets current battery health to newState.'''
     global good_battery_health
     good_battery_health = newState 
 
 def set_cur_time(newTime): 
+    '''Sets current simulation uptime to newTime.'''
     global cur_time
     cur_time = newTime 
 
-# Charging helper function
-# Wrapper for setter functions above for preset charge operations.  
+### Charging Helper Functions
 def charge_helper_function(operation, time):
+    '''Internal helper function for running charge operations.
+    Runs without considering any logic, simply updates values.'''
     global SLOW_CHARGE, FAST_CHARGE, CAPPED_CHARGE
     global SLOW_CHARGE_RECHARGE_RATE, SLOW_CHARGE_TEMPERATURE_RATE
     global FAST_CHARGE_RECHARGE_RATE, FAST_CHARGE_TEMPERATURE_RATE
 
     if operation == SLOW_CHARGE: 
-        set_cur_temp(get_cur_temp() + SLOW_CHARGE_TEMPERATURE_RATE*time)
-        set_cur_charge(get_cur_charge() + SLOW_CHARGE_RECHARGE_RATE*time)
+        set_cur_temp(get_cur_temp() + SLOW_CHARGE_TEMPERATURE_RATE * time)
+        set_cur_charge(get_cur_charge() + SLOW_CHARGE_RECHARGE_RATE * time)
     elif operation == FAST_CHARGE: 
-        set_cur_temp(get_cur_temp() + FAST_CHARGE_TEMPERATURE_RATE*time)
-        set_cur_charge(get_cur_charge() + FAST_CHARGE_RECHARGE_RATE*time)
+        set_cur_temp(get_cur_temp() + FAST_CHARGE_TEMPERATURE_RATE * time)
+        set_cur_charge(get_cur_charge() + FAST_CHARGE_RECHARGE_RATE * time)
     elif operation == CAPPED_CHARGE: 
-        set_cur_temp(get_cur_temp() + SLOW_CHARGE_TEMPERATURE_RATE*time) #?? unsure will revise 
+        set_cur_temp(get_cur_temp() + SLOW_CHARGE_TEMPERATURE_RATE * time) 
 
 # Return time until a possible overcharge event, given a set of conditions. 
-def time_until_overcharge(temp,charge,health): 
+def time_until_overcharge(temp, charge, health): 
+    '''Returns time until a possible overcharge event, given a set of battery conditions above.'''
     deltaCharge = OVERCHARGE_CHARGE_THRESHOLD - charge #find difference between overcharge threshold and current charge
     time = 0
     while deltaCharge > 0: 
         # Check if fast charging is possible. 
-        if duration_fast_charge_possible_internal(temp,OVERCHARGE_CHARGE_THRESHOLD,health) > 0: 
-            fastChargeTime = duration_fast_charge_possible_internal(temp,OVERCHARGE_CHARGE_THRESHOLD,health)
+        if duration_fast_charge_possible_internal(temp, OVERCHARGE_CHARGE_THRESHOLD, health) > 0: 
+            fastChargeTime = duration_fast_charge_possible_internal(temp, OVERCHARGE_CHARGE_THRESHOLD, health)
             time += fastChargeTime
-            deltaCharge -= FAST_CHARGE_RECHARGE_RATE*fastChargeTime
+            deltaCharge -= FAST_CHARGE_RECHARGE_RATE * fastChargeTime
         # If fast charging is not possible, then slow charge to delta charge -> 0
         else:
-            slowChargeTime = deltaCharge/SLOW_CHARGE_RECHARGE_RATE
+            slowChargeTime = deltaCharge / SLOW_CHARGE_RECHARGE_RATE
             time += slowChargeTime
             deltaCharge -= slowChargeTime * SLOW_CHARGE_RECHARGE_RATE
     return time
-    
 
-
-
-## Battery Simulation Functions 
-
+### Battery Simulation Functions 
 # Updates overcharge event log, then checks if battery will go to a bad state from these events. 
 def new_overcharge_event(deltaTime=0): 
+    '''Updates overcharge event log, then checks if battery health degrades.'''
     global overcharge_events
-    overcharge_events.insert(0,get_cur_time() + deltaTime) # Insert current time as a new overcharge entry. 
-    if get_recent_overcharge_events() >= OVERCHARGE_EVENT_COUNT_THRESHOLD: #then check recent overcharge events
-        set_cur_battery_health(False) #
+    overcharge_events.insert(0, get_cur_time() + deltaTime) 
 
+    # Check if amount of recent overcharge events is sufficient to degrade battery.
+    if get_recent_overcharge_events() >= OVERCHARGE_EVENT_COUNT_THRESHOLD: 
+        set_cur_battery_health(False) 
 
 def get_recent_overcharge_events(deltaTime=0): 
+    '''Returns a value of the number of overcharge events within OVERCHARGE_TIME_THRESHOLD.'''
+
     recentOverchargeEvents = 0
     for overchargeEvent in overcharge_events: 
+
         # If the time between our overcharge event and current time is greater than the threshold, count the event. 
+        # # Time is counted as exclusive
         if (get_cur_time()-overchargeEvent - deltaTime) < OVERCHARGE_TIME_THRESHOLD: 
             recentOverchargeEvents += 1 
     return recentOverchargeEvents
         
-# Simulate battery activities. 
+# Simulates activities (provided prototype) 
 def simulate_activity(activity, duration):
     if activity == "charge": 
         charge_battery(duration)
@@ -175,8 +184,9 @@ def simulate_activity(activity, duration):
     if activity == "idle": 
         idle_battery(duration)
 
-# battery use function
+# Battery use helper function
 def use_battery(duration): 
+    '''Helper function for battery use logic.'''
     # battery temperature logic 
     timeToEmpty = get_cur_charge()/USAGE_DISCHARGE_RATE
     # Get desired / new battery value assuming no throttling
@@ -197,52 +207,55 @@ def use_battery(duration):
 
 # Battery Idle function
 def idle_battery(duration): 
+    '''Helper function for battery idling logic.'''
     set_cur_temp(get_cur_temp() - IDLING_TEMPERATURE_RATE*duration) #linear relation regardless of battery state 
     set_cur_charge(get_cur_charge() - IDLING_DISCHARGE_RATE*duration) #set_cur_charge catches battery under 0 conditions
     set_cur_time(get_cur_time() + duration)
 
 # Charge Battery aid function. 
 def charge_battery(duration): 
+    '''Helper function for battery charging logic.'''
     # Let duration be a bucket we're trying to empty with our operations. 
     global BAD_BATTERY_LIMIT
     global SLOW_CHARGE_RECHARGE_RATE, SLOW_CHARGE_TEMPERATURE_RATE
     global FAST_CHARGE_RECHARGE_RATE, FAST_CHARGE_TEMPERATURE_RATE
     overchargeFlag = False #flag if we've already had an overcharge event during this charge operation. 
 
+    timeToUse = 0  # Time to use for operations, calculated by other conditionals 
     # Try to empty duration
     while duration > 0: 
-        timeToUse = 0  # Time to use for operations, calculated by other conditionals 
-        timeUntilOvercharge = time_until_overcharge(get_cur_temp(),get_cur_charge(),get_cur_battery_health()) 
-
+        
         # If fast charging is possible, fast charge for as long as possible. 
-        # Fast charging operation. 
         if duration_fast_charge_possible() != 0: 
-            timeToUse = duration_fast_charge_possible() #already inherently deals with charge cap 
+            timeToUse = min(duration_fast_charge_possible(),duration) #already inherently deals with charge cap 
             charge_helper_function(FAST_CHARGE, timeToUse)
 
         #If fast charging is not possible, slow charge until you reach the cap. 
         else: 
 
+            # Calculate time until a possible overcharge event  
+            timeUntilOvercharge = time_until_overcharge(get_cur_temp(), get_cur_charge(), get_cur_battery_health()) 
+            
             # Check time till for max charge after overcharge status update
             timeUntilCap = (get_max_possible_charge()-get_cur_charge())/SLOW_CHARGE_RECHARGE_RATE 
             
             if get_cur_battery_health(): # Slow charging with good health
                 
                 if timeUntilOvercharge > 0: # If battery is still good and below 90%, charge until 90% then rerun logic 
-                    timeToUse = timeUntilOvercharge
-                    charge_helper_function(SLOW_CHARGE,timeToUse)
+                    timeToUse = min(timeUntilOvercharge, duration)
+                    charge_helper_function(SLOW_CHARGE, timeToUse)
 
                 elif timeUntilCap > 0 : # If battery is still good and charging past 90%, charge until maximum. 
-                    timeToUse = timeUntilCap
-                    charge_helper_function(SLOW_CHARGE,timeUntilCap)
+                    timeToUse = min(timeUntilCap, duration)
+                    charge_helper_function(SLOW_CHARGE, timeToUse)
 
                 else: # If battery is still charging, use capped battery rules for the remaining time 
                     timeToUse = duration
-                    charge_helper_function(CAPPED_CHARGE,timeToUse)   
+                    charge_helper_function(CAPPED_CHARGE, timeToUse)   
             else: # If battery is in a BAD health state, then overcharges are imposssible. 
 
                 if timeUntilCap > 0: # If battery is charging at a value below cap, charge until maximum. 
-                    timeToUse = timeUntilCap
+                    timeToUse = min(timeUntilCap,duration)
                     charge_helper_function(SLOW_CHARGE,timeToUse)
                 
                 else: #If battery is charging at value at or above cap, use capped battery rules for the remaining time. 
@@ -259,25 +272,29 @@ def charge_battery(duration):
 
 # Checks how much fast charge time is still possible with current internal battery parameters
 def duration_fast_charge_possible(): 
+    '''Wrapper function for duration_fast_charge_possible_internal().'''
     return duration_fast_charge_possible_internal(get_cur_temp(), get_cur_charge(), get_cur_battery_health())
 
 # Checks how much fast charge time is still possible with a given set of parameters. 
-def duration_fast_charge_possible_internal(temp, charge, health):
+def duration_fast_charge_possible_internal(temp, charge, health):   
+    '''Returns maximum possible amount of time for fast charging to occur.'''
     length_of_fast_charge = 0
     current_temperature = temp
     current_charge = charge 
     current_battery_healthy = health
 
-    # Checks if battery is unhealthy, C >80, T > 40
-    if not current_battery_healthy or current_charge > FAST_CHARGE_RECHARGE_LIMIT or current_temperature > FAST_CHARGE_TEMPERATURE_LIMIT: 
+    # Checks if battery is unhealthy, C >80, T > 40 inclusive
+    if not current_battery_healthy or current_charge >= FAST_CHARGE_RECHARGE_LIMIT or current_temperature >= FAST_CHARGE_TEMPERATURE_LIMIT: 
         return length_of_fast_charge # If it is one of the three states above, battery charge will stop. 
     else: 
         time1 = (FAST_CHARGE_RECHARGE_LIMIT-current_charge)/3 #from C = C_0 + 3t, solve for time until 80%
         time2 = (FAST_CHARGE_TEMPERATURE_LIMIT-current_temperature)*2 # from T = T_0 + 0.5t ,solve for time until 40C 
-        return min(time1,time2) # return smaller of two values above 
+        return min(time1, time2) # return smaller of two values above 
 
 # Return charging time needed for (minutes) minutes of the "use" action. 
 def charge_time_needed(minutes):
+    '''Returns the charge time required to use a battery for a given amount of minutes.
+    Returns 0 if no solution / battery is already charged to that point.'''
     desired_charge = minutes * USAGE_DISCHARGE_RATE
     missingCharge = desired_charge - get_cur_charge() # Find charge missing / required to charge. 
     chargeTimeRequired = 0 
@@ -296,10 +313,10 @@ def charge_time_needed(minutes):
         fastChargeTime = duration_fast_charge_possible_internal(simTemp,simCharge,get_cur_battery_health())
         if fastChargeTime> 0: # if fast charge is possible 
             chargeTimeRequired += fastChargeTime
-            simTemp +=FAST_CHARGE_TEMPERATURE_RATE*fastChargeTime
-            simCharge += FAST_CHARGE_RECHARGE_RATE*fastChargeTime
+            simTemp +=FAST_CHARGE_TEMPERATURE_RATE * fastChargeTime
+            simCharge += FAST_CHARGE_RECHARGE_RATE * fastChargeTime
 
-            missingCharge -= FAST_CHARGE_RECHARGE_RATE*fastChargeTime
+            missingCharge -= FAST_CHARGE_RECHARGE_RATE * fastChargeTime
             continue 
 
         # If fast charge is not possible, perform slow charge: 
@@ -369,4 +386,32 @@ if __name__ == '__main__':
     print(get_cur_temp()) # 82.5
 
     initialize()
-    # add your tests here
+    simulate_activity("charge", 30) #[minutes 0–30]
+    simulate_activity("use", 50) #[minutes 30–80]
+    simulate_activity("use", 10) #[minutes 80–90]
+    simulate_activity("charge", 100)# [minutes 90–190]
+    simulate_activity("idle", 100) #[minutes 190–290]
+    simulate_activity("charge", 80) #[minutes 290–370]
+    simulate_activity("use", 40) #[minutes 370–410]
+    simulate_activity("charge", 80)# [minutes 410–490]
+    simulate_activity("idle", 400) #[minutes 490–890]
+    simulate_activity("charge", 10)# [minutes 890–900]
+
+    initialize()
+    set_cur_charge(78)
+    simulate_activity("charge", 1)
+
+
+    initialize()
+    simulate_activity("charge", 10)  # 80
+    simulate_activity("use", 1)      # 78
+
+    # Repeat charge/use transitions. The final charge switches from fast to slow
+    # at 1094/2187 minute; the following use preserves that fractional result.
+    for repetition in range(7):
+        simulate_activity("charge", 1)
+        simulate_activity("use", 1)
+
+    print(get_cur_charge())          # expected: 78 + 1093/2187 = 78.49977137631458...
+    print(get_cur_temp())            # expected: 156097/4374 = 35.68747142203932...
+    print(get_cur_battery_health())  # expected: True
