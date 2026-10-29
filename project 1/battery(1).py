@@ -371,7 +371,9 @@ if __name__ == '__main__':
     print(get_cur_temp()) # 0
     print(get_cur_battery_health()) # True
     print(duration_fast_charge_possible()) # 10
-
+    import mpmath
+    from mpmath import mp
+    
     simulate_activity("charge",80)
     print(get_cur_charge()) # 90
     print(get_cur_temp()) # 22.5
