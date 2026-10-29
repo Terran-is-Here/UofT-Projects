@@ -10,12 +10,46 @@ Author(s): Michael Guerzhoy with tests contributed by Siavash Kazemian.  Last mo
 """
 
 def is_empty(board):
-    pass
+    for row in board:
+        for elem in row: 
+            if elem != " ": 
+                return False
+    return True
     
 def is_bounded(board, y_end, x_end, length, d_y, d_x):
-    pass
+    # Get values of endpoints and start point
+    afterEndY = y_end + d_y
+    afterEndX = x_end + d_x
+    startY = y_end - (d_y * length) #double check (off by one?)
+    startX = x_end - (d_x * length) #double check (off by one?)
+    board_size = len(board) - 1 #offset indexing
+    open_spaces = 2 #number of valid spaces 
+
+    # Check if these values are a "wall" (that is, outside the bounds of the table)
+    if board_size < afterEndY or afterEndY < 0 or board_size < afterEndX or afterEndX < 0: 
+        open_spaces -= 1
+    else: 
+        if board[afterEndY][afterEndX] != " ": # Check if tile is not free
+            open_spaces -= 1
+
+    # Do the same for the starting values
+    if board_size < startY or startY < 0 or board_size < startX or startX < 0: 
+        open_spaces -= 1
+    else: 
+        if board[startY][startX] != " ": # Check if tile is not free
+            open_spaces -= 1
+
+    if open_spaces == 2: 
+        return "OPEN"
+    elif open_spaces == 1: 
+        return "SEMIOPEN"
+    else: 
+        return "CLOSED" 
+
     
 def detect_row(board, col, y_start, x_start, length, d_y, d_x):
+    
+    
     return open_seq_count, semi_open_seq_count
     
 def detect_rows(board, col, length):
