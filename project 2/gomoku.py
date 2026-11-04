@@ -9,14 +9,33 @@ This is a placeholder that you should remove once you modify the function.
 Author(s): Michael Guerzhoy with tests contributed by Siavash Kazemian.  Last modified: Oct. 19, 2026
 """
 
+
+
+OPEN_FLAG = "OPEN" 
+SEMIOPEN_FLAG = "SEMIOPEN"
+CLOSED_FLAG = "CLOSED"
+WIN_LENGTH = 5
+import copy
+
+
 def is_empty(board):
+    """Check if the board is fully empty. Returns True if it is, False if not. """
     for row in board:
         for elem in row: 
             if elem != " ": 
                 return False
     return True
+
+def is_full(board): 
+    """Check if the board is full. Returns True if it is, False if not. """
+    for row in board:
+        for elem in row: 
+            if elem == " ": 
+                return False
+        return True
     
 def is_bounded(board, y_end, x_end, length, d_y, d_x):
+    """Checks a sequence of length length that ends (y_end,x_end)'s boundedness. """
     # Get values of endpoints and start point
     afterEndY = y_end + d_y
     afterEndX = x_end + d_x
@@ -40,24 +59,160 @@ def is_bounded(board, y_end, x_end, length, d_y, d_x):
             open_spaces -= 1
 
     if open_spaces == 2: 
-        return "OPEN"
+        return OPEN_FLAG
     elif open_spaces == 1: 
-        return "SEMIOPEN"
+        return SEMIOPEN_FLAG
     else: 
-        return "CLOSED" 
+        return CLOSED_FLAG
 
-    
 def detect_row(board, col, y_start, x_start, length, d_y, d_x):
-    
-    
+    """
+    Analyses the row R from (y_start,x_start) in the direction of d_y,d_x, and returns a tuple of 
+    open sequences in R, and semi-open sequences in R of the color col. 
+    """
+    open_seq_count = 0
+    semi_open_seq_count = 0 
+    samecolor_count = 0 
+    # Go through list, check if color is the same, count length, if length of count is same as length, check openness. 
+    board_value = ""
+    seq_state = ""
+
+    # Find bound for how long we're checking 
+    d_x_max  = max(d_x*(len(board)-x_start),-1*d_x*x_start)
+    d_y_max = max(d_y*(len(board)-y_start),-1*d_y*y_start)
+
+    if d_y == 0: 
+        bound = d_x_max
+    elif d_x == 0: 
+        bound = d_y_max 
+    else: 
+        bound = min(d_x_max,d_y_max)
+
+    i = 0
+    while i < bound:  #check length of board: 
+        # Get corresponding test values 
+        check_x = x_start +  d_x*i  #
+        check_y = y_start + d_y*i
+        # Get corresponding board value 
+        board_value = board[check_y][check_x]
+        
+        if board_value == col: #If color is the same as the one we are checking, 
+            samecolor_count += 1 # Iterate count by one
+        
+        else: #If sequence is broken... 
+            if samecolor_count == length: #If sequence length is EXACTLY the length; then it is complete, thus we check it. 
+                seq_state = is_bounded(board,check_y-1,check_x-1,length,d_y,d_x) #Check from point right before the sequence breaks. 
+                if seq_state == OPEN_FLAG: 
+                    open_seq_count += 1
+                elif seq_state == SEMIOPEN_FLAG:
+                    semi_open_seq_count += 1
+            else: #If sequence length is not exact (e.g. bbbb, w/length 3, subsequence)
+                i = i - samecolor_count + 1 #Start checking again from the next value. 
+            samecolor_count = 0 #Reset count
+            continue 
+        i += 1 
+             
+
     return open_seq_count, semi_open_seq_count
-    
+
+# Variant of Detect_Row, instead returning the number of complete sequences
+# of color col, and of length length. 
+def detect_sequences_of_length(board,col,y_start,x_start,length,d_y,d_x): 
+    seq_count = 0
+    samecolor_count = 0 
+    # Go through list, check if color is the same, count length, if length of count is same as length, check openness. 
+    board_value = ""
+
+    # Find bound for how long we're checking 
+    d_x_max  = max(d_x*(len(board)-x_start),-1*d_x*x_start)
+    d_y_max = max(d_y*(len(board)-y_start),-1*d_y*y_start)
+
+    if d_y == 0: 
+        bound = d_x_max
+    elif d_x == 0: 
+        bound = d_y_max 
+    else: 
+        bound = min(d_x_max,d_y_max)
+
+    while i < bound:  #check length of board: 
+            # Get corresponding test values 
+            check_x = x_start +  d_x*i  #
+            check_y = y_start + d_y*i
+            # Get corresponding board value 
+            board_value = board[check_y][check_x]
+            
+            if board_value == col: #If color is the same as the one we are checking, 
+                samecolor_count += 1 # Iterate count by one
+            
+            else: #If sequence is broken...  #REDO (NOT CORRECT)
+                if samecolor_count == length: #If sequence length is EXACTLY the length; then it is complete, . 
+                    seq_count += 1 
+                else: #If sequence length is not exact (e.g. bbbb, w/length 3, subsequence)
+                    i = i - samecolor_count + 1 #Start checking again from the next value. 
+                samecolor_count = 0 #Reset count
+                continue 
+            i += 1 
+
+    return seq_count #return count of complete sequences with length length...
+
 def detect_rows(board, col, length):
-    ####CHANGE ME
     open_seq_count, semi_open_seq_count = 0, 0
+
+    # Check Vertical Rows, use top row for analysis 
+    for column in range(len(board)): 
+        open_seq_buffer,semiopen_seq_buffer = detect_row(board,col,0,column,length,1,0) 
+        
+        open_seq_count += open_seq_buffer
+        semi_open_seq_count += semiopen_seq_buffer
+
+    #Check Horizontal Rows
+    for row in range(len(board)): 
+        open_seq_buffer,semiopen_seq_buffer = detect_row(board,col,row,0,length,0,1) 
+        
+        open_seq_count += open_seq_buffer
+        semi_open_seq_count += semiopen_seq_buffer
+
+    # Check Diagonals from the top
+    for column in range(len(board)): 
+        open_seq_buffer,semiopen_seq_buffer = detect_row(board,col,0,column,length,1,1) # towards bottom right 
+        
+        open_seq_count += open_seq_buffer
+        semi_open_seq_count += semiopen_seq_buffer
+
+        open_seq_buffer,semiopen_seq_buffer = detect_row(board,col,0,column,length,1,-1) # towards bottom left 
+                    
+        open_seq_count += open_seq_buffer
+        semi_open_seq_count += semiopen_seq_buffer
+
+    # Check Diagonals from the bottom
+    for column in range(1,len(board)-1): 
+        open_seq_buffer,semiopen_seq_buffer = detect_row(board,col,len(board)-1,column,length,-1,1) # towards top right 
+        
+        open_seq_count += open_seq_buffer
+        semi_open_seq_count += semiopen_seq_buffer
+
+        open_seq_buffer,semiopen_seq_buffer = detect_row(board,col,len(board)-1,column,length,-1,-1) # towards top left 
+                    
+        open_seq_count += open_seq_buffer
+        semi_open_seq_count += semiopen_seq_buffer
+
     return open_seq_count, semi_open_seq_count
     
 def search_max(board):
+    top_score = 0
+    temp_score = 0
+    board_copy = []
+    for temp_move_y in range(len(board)): 
+        
+        for temp_move_x in range(len(board)): 
+            if board[temp_move_y][temp_move_x] == " ": #check if we can place
+                board_copy = copy.deepcopy(board)
+                board_copy[temp_move_y][temp_move_x] = "b" #set test token 
+                temp_score = score(board_copy)
+                if temp_score >= top_score: 
+                    top_score = temp_score
+                    move_y = temp_move_y
+                    move_x = temp_move_x
     return move_y, move_x
     
 def score(board):
@@ -89,7 +244,37 @@ def score(board):
             open_b[2] + semi_open_b[2] - open_w[2] - semi_open_w[2])
     
 def is_win(board):
-    pass
+    
+    win_states = ["White won", "Black won", "Draw", "Continue playing"]
+    colors = ["w","b"]
+    # Check per color
+    # coded up hastily
+    for col in colors: 
+        winning_rows = 0
+        for column in range(len(board)): 
+            winning_rows += detect_sequences_of_length(board,col,0,column,WIN_LENGTH,1,0) 
+
+        #Check Horizontal Rows
+        for row in range(len(board)): 
+            winning_rows += detect_sequences_of_length(board,col,row,0,WIN_LENGTH,0,1) 
+
+        # Check Diagonals from the top
+        for column in range(len(board)): 
+            winning_rows += detect_sequences_of_length(board,col,0,column,WIN_LENGTH,1,1) # towards bottom right 
+            winning_rows += detect_sequences_of_length(board,col,0,column,WIN_LENGTH,1,-1) # towards bottom left 
+
+        # Check Diagonals from the bottom
+        for column in range(1,len(board)-1): 
+            winning_rows += detect_sequences_of_length(board,col,len(board)-1,column,WIN_LENGTH,-1,1) # towards top right 
+            winning_rows+= detect_sequences_of_length(board,col,len(board)-1,column,WIN_LENGTH,-1,-1) # towards top left 
+
+        if winning_rows != 0: #if a winning row exists, return the corresponding color. 
+            return win_states[colors.index(col)]
+    # If no color wins, check if board is full: 
+    return win_states[2] if is_full(board) else win_states[3]
+
+
+            
 
 def print_board(board):
     
@@ -189,6 +374,7 @@ def test_detect_row():
     x = 5; y = 1; d_x = 0; d_y = 1; length = 3
     put_seq_on_board(board, y, x, d_y, d_x, length, "w")
     print_board(board)
+    print(f"Detect Row Result: {detect_row(board,"w",0,x,length,d_y,d_x)}, Desired: (1,0)")
     if detect_row(board, "w", 0,x,length,d_y,d_x) == (1,0):
         print("TEST CASE for detect_row PASSED")
     else:
@@ -339,5 +525,7 @@ def some_tests():
     #        Semi-open rows of length 5: 0
 
 if __name__ == '__main__':
-    play_gomoku(8)
+    test_detect_row()
+    test_detect_rows()
+    #play_gomoku(8)
     
