@@ -58,7 +58,7 @@ def is_bounded(board, y_end, x_end, length, d_y, d_x):
         if board[startY][startX] != " ": # Check if tile is not free
             open_spaces -= 1
 
-    if open_spaces == 2: 
+    if open_spaces == 2: # Return corresponding values pertaining to boundedness.
         return OPEN_FLAG
     elif open_spaces == 1: 
         return SEMIOPEN_FLAG
@@ -76,20 +76,18 @@ def detect_row(board, col, y_start, x_start, length, d_y, d_x):
     # Go through list, check if color is the same, count length, if length of count is same as length, check openness. 
     board_value = ""
     seq_state = ""
-
     # Find bound for how long we're checking 
     d_x_max  = max(d_x*(len(board)-x_start),-1*d_x*x_start)
     d_y_max = max(d_y*(len(board)-y_start),-1*d_y*y_start)
 
-    if d_y == 0: 
+    if d_y == 0: # If Y is not being traversed, bound with terms to x
         bound = d_x_max
-    elif d_x == 0: 
+    elif d_x == 0: # If X is not being traversed, bound with terms of y
         bound = d_y_max 
-    else: 
+    else: # If both are being traversed, bound with terms of the minimum value of the two above. 
         bound = min(d_x_max,d_y_max)
 
-    i = 0
-    while i < bound:  #check length of board: 
+    for i in range(bound):  #check length of board: 
         # Get corresponding test values 
         check_x = x_start +  d_x*i  #
         check_y = y_start + d_y*i
@@ -98,19 +96,18 @@ def detect_row(board, col, y_start, x_start, length, d_y, d_x):
         
         if board_value == col: #If color is the same as the one we are checking, 
             samecolor_count += 1 # Iterate count by one
-        
         else: #If sequence is broken... 
             if samecolor_count == length: #If sequence length is EXACTLY the length; then it is complete, thus we check it. 
-                seq_state = is_bounded(board,check_y-1,check_x-1,length,d_y,d_x) #Check from point right before the sequence breaks. 
+                seq_state = is_bounded(board,check_y-(1*d_y),check_x-(1*d_x),length,d_y,d_x) #Check from point right before the sequence breaks. 
                 if seq_state == OPEN_FLAG: 
                     open_seq_count += 1
                 elif seq_state == SEMIOPEN_FLAG:
                     semi_open_seq_count += 1
-            else: #If sequence length is not exact (e.g. bbbb, w/length 3, subsequence)
-                i = i - samecolor_count + 1 #Start checking again from the next value. 
+            else: #If sequence length is not exact, do not count. (e.g. bbbb, w/length 3, subsequence, or bb not length 3)
+                pass
             samecolor_count = 0 #Reset count
             continue 
-        i += 1 
+        
              
 
     return open_seq_count, semi_open_seq_count
@@ -134,24 +131,24 @@ def detect_sequences_of_length(board,col,y_start,x_start,length,d_y,d_x):
     else: 
         bound = min(d_x_max,d_y_max)
 
-    while i < bound:  #check length of board: 
+    for i in range(bound):  #check length of board: 
             # Get corresponding test values 
-            check_x = x_start +  d_x*i  #
-            check_y = y_start + d_y*i
+            check_x = x_start +  d_x*i  #get test x value
+            check_y = y_start + d_y*i #get test y value
             # Get corresponding board value 
             board_value = board[check_y][check_x]
             
             if board_value == col: #If color is the same as the one we are checking, 
                 samecolor_count += 1 # Iterate count by one
             
-            else: #If sequence is broken...  #REDO (NOT CORRECT)
-                if samecolor_count == length: #If sequence length is EXACTLY the length; then it is complete, . 
+            else: #If sequence is broken...  
+                if samecolor_count == length: #If sequence length is EXACTLY the length; then it is complete. 
                     seq_count += 1 
                 else: #If sequence length is not exact (e.g. bbbb, w/length 3, subsequence)
-                    i = i - samecolor_count + 1 #Start checking again from the next value. 
+                    pass
                 samecolor_count = 0 #Reset count
                 continue 
-            i += 1 
+            
 
     return seq_count #return count of complete sequences with length length...
 
@@ -202,14 +199,13 @@ def search_max(board):
     top_score = 0
     temp_score = 0
     board_copy = []
-    for temp_move_y in range(len(board)): 
-        
-        for temp_move_x in range(len(board)): 
+    for temp_move_y in range(len(board)):  #Iterate through all possible y placements, 
+        for temp_move_x in range(len(board)): # Iterate through all possible x placements
             if board[temp_move_y][temp_move_x] == " ": #check if we can place
-                board_copy = copy.deepcopy(board)
+                board_copy = copy.deepcopy(board) #if we can place, make a copy of the board
                 board_copy[temp_move_y][temp_move_x] = "b" #set test token 
-                temp_score = score(board_copy)
-                if temp_score >= top_score: 
+                temp_score = score(board_copy) #then score the test board
+                if temp_score > top_score: #if temporary score is greater than the top score, we set that as the next best move. 
                     top_score = temp_score
                     move_y = temp_move_y
                     move_x = temp_move_x
@@ -248,7 +244,7 @@ def is_win(board):
     win_states = ["White won", "Black won", "Draw", "Continue playing"]
     colors = ["w","b"]
     # Check per color
-    # coded up hastily
+    
     for col in colors: 
         winning_rows = 0
         for column in range(len(board)): 
@@ -525,7 +521,6 @@ def some_tests():
     #        Semi-open rows of length 5: 0
 
 if __name__ == '__main__':
-    test_detect_row()
-    test_detect_rows()
-    #play_gomoku(8)
+    easy_testset_for_main_functions()
+    play_gomoku(8)
     
