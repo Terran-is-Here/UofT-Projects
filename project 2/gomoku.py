@@ -205,6 +205,10 @@ def search_max(board):
                 board_copy = copy.deepcopy(board) #if we can place, make a copy of the board
                 board_copy[temp_move_y][temp_move_x] = "b" #set test token 
                 temp_score = score(board_copy) #then score the test board
+
+                if temp_score == 100000: #If winning move is detected
+                    return temp_move_y, temp_move_x #return winning move immediately. 
+                
                 if temp_score > top_score: #if temporary score is greater than the top score, we set that as the next best move. 
                     top_score = temp_score
                     move_y = temp_move_y
