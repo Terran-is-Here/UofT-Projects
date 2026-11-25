@@ -5,7 +5,7 @@ import urllib.request
 import ssl
 import re #use regex to find corresponding value 
 ssl._create_default_https_context = ssl._create_unverified_context
-USER_AGENT_HEADER = {"User-Agent":"ESC180-Lab7/1.0 (University of Toronto course lab)"}
+USER_AGENT_HEADER = {"User-Agent":"web "}
 SEARCH_REGEX = '(?:data-mw-num-results-total=")(\\d+)' #swap per website's regex if they have a parameter
 
 
